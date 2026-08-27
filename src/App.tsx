@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ledger } from "./data/ledger";
 import { roster } from "./data/roster";
 import { scoreEvents } from "./engine/scoring";
@@ -5,9 +6,13 @@ import { calculateAgentTotals } from "./engine/totals";
 import { buildLeaderboard } from "./engine/leaderboard";
 
 function App() {
+  const [recomputeKey, setRecomputeKey] = useState(0);
+
   const results = scoreEvents(ledger, roster);
   const totals = calculateAgentTotals(results, roster);
   const leaderboard = buildLeaderboard(totals, roster);
+
+  void recomputeKey;
 
   const agentNames = new Map(
     roster.map((agent) => [agent.agentId, agent.name]),
@@ -21,7 +26,9 @@ function App() {
           <p>Sales Performance Leaderboard</p>
         </div>
 
-        <button>Recompute</button>
+        <button onClick={() => setRecomputeKey((key) => key + 1)}>
+  Recompute
+</button>
       </header>
 
       <main>
