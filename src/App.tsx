@@ -9,6 +9,10 @@ function App() {
   const totals = calculateAgentTotals(results, roster);
   const leaderboard = buildLeaderboard(totals, roster);
 
+  const agentNames = new Map(
+    roster.map((agent) => [agent.agentId, agent.name]),
+  );
+
   return (
     <div className="app">
       <header className="header">
@@ -38,6 +42,7 @@ function App() {
           </div>
         </section>
 
+        {/* Leaderboard */}
         <section>
           <h2>Leaderboard</h2>
 
@@ -76,6 +81,89 @@ function App() {
                           ),
                         )}
                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Event Ledger */}
+        <section className="ledger-section">
+          <h2>Event Ledger</h2>
+          <p className="section-description">
+            Every ledger event and its scoring outcome.
+          </p>
+
+          <div className="table-container">
+            <table className="ledger-table">
+              <thead>
+                <tr>
+                  <th>Event ID</th>
+                  <th>Agent</th>
+                  <th>Event Type</th>
+                  <th>Occurred At</th>
+                  <th>Source</th>
+                  <th>Status</th>
+                  <th>Points</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {results.map((result) => (
+                  <tr
+                    key={`${result.eventId}-${result.agentId}-${result.eventType}`}
+                    className={result.flagged ? "flagged-row" : ""}
+                  >
+                    <td>
+                      <strong>{result.eventId}</strong>
+                    </td>
+
+                    <td>
+                      <strong>
+                        {agentNames.get(result.agentId) ?? "Unknown"}
+                      </strong>
+                      <small>{result.agentId}</small>
+                    </td>
+
+                    <td>{result.eventType}</td>
+
+                    <td>
+                      {ledger.find(
+                        (event) => event.eventId === result.eventId,
+                      )?.occurredAt ?? "-"}
+                    </td>
+
+                    <td>
+                      {ledger.find(
+                        (event) => event.eventId === result.eventId,
+                      )?.source ?? "-"}
+                    </td>
+
+                    <td>
+                      <span
+                        className={`status status-${result.status.toLowerCase()}`}
+                      >
+                        {result.status}
+                      </span>
+                    </td>
+
+                    <td>
+                      <strong>{result.points}</strong>
+                    </td>
+
+                    <td>
+                      <span className="reason">
+                        {result.reason}
+                      </span>
+
+                      {result.flagged && result.flagReason && (
+                        <small className="flag-reason">
+                          {result.flagReason}
+                        </small>
+                      )}
                     </td>
                   </tr>
                 ))}
