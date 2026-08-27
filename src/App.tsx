@@ -4,6 +4,10 @@ import { roster } from "./data/roster";
 import { scoreEvents } from "./engine/scoring";
 import { calculateAgentTotals } from "./engine/totals";
 import { buildLeaderboard } from "./engine/leaderboard";
+import {
+  reconcile,
+  summarizeReconciliation,
+} from "./engine/reconciliation";
 
 function App() {
   const [recomputeKey, setRecomputeKey] = useState(0);
@@ -11,6 +15,19 @@ function App() {
   const results = scoreEvents(ledger, roster);
   const totals = calculateAgentTotals(results, roster);
   const leaderboard = buildLeaderboard(totals, roster);
+
+  const engineTotals = new Map(
+    totals.map((agent) => [agent.agentId, agent.totalPoints]),
+  );
+
+  const reconciliationRows = reconcile(
+    ledger,
+    roster,
+    engineTotals,
+  );
+
+  const reconciliationSummary =
+    summarizeReconciliation(reconciliationRows);
 
   void recomputeKey;
 
@@ -27,11 +44,12 @@ function App() {
         </div>
 
         <button onClick={() => setRecomputeKey((key) => key + 1)}>
-  Recompute
-</button>
+          Recompute
+        </button>
       </header>
 
       <main>
+        {/* Main Summary */}
         <section className="summary">
           <div>
             <span>Events</span>
@@ -99,6 +117,7 @@ function App() {
         {/* Event Ledger */}
         <section className="ledger-section">
           <h2>Event Ledger</h2>
+
           <p className="section-description">
             Every ledger event and its scoring outcome.
           </p>
@@ -172,6 +191,147 @@ function App() {
                         </small>
                       )}
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Reconciliation */}
+        <section className="reconciliation-section">
+          <h2>Reconciliation</h2>
+
+          <p className="section-description">
+            Compare engine totals against legacy dashboards.
+          </p>
+
+          {/* Reconciliation Summary */}
+          <div className="summary">
+            <div>
+              <span>Total Agents</span>
+              <strong>
+                {reconciliationSummary.totalAgents}
+              </strong>
+            </div>
+
+            <div>
+              <span>Matching</span>
+              <strong>
+                {reconciliationSummary.matchingAgents}
+              </strong>
+            </div>
+
+            <div>
+              <span>Mismatching</span>
+              <strong>
+                {reconciliationSummary.mismatchingAgents}
+              </strong>
+            </div>
+
+            <div>
+              <span>Dashboard A Issues</span>
+              <strong>
+                {reconciliationSummary.dashboardAMismatches}
+              </strong>
+            </div>
+
+            <div>
+              <span>Dashboard B Issues</span>
+              <strong>
+                {reconciliationSummary.dashboardBMismatches}
+              </strong>
+            </div>
+
+            <div>
+              <span>Dashboard D Issues</span>
+              <strong>
+                {reconciliationSummary.dashboardDMismatches}
+              </strong>
+            </div>
+          </div>
+
+          {/* Reconciliation Table */}
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th>Engine</th>
+                  <th>Dashboard A</th>
+                  <th>Dashboard B</th>
+                  <th>Dashboard D</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {reconciliationRows.map((row) => (
+                  <tr key={row.agentId}>
+                    <td>
+                      <strong>{row.agentName}</strong>
+                      <small>{row.agentId}</small>
+                    </td>
+
+                    <td>
+                      <strong>{row.engineTotal}</strong>
+                    </td>
+
+                    <td>
+                      {row.dashboardA}
+                      <small>Δ {row.deltaA}</small>
+                    </td>
+
+                    <td>
+                      {row.dashboardB}
+                      <small>Δ {row.deltaB}</small>
+                    </td>
+
+                    <td>
+                      {row.dashboardD}
+                      <small>Δ {row.deltaD}</small>
+                    </td>
+
+                    <td>
+  <div>
+    <span
+      className={`status status-${row.statusA.toLowerCase()}`}
+    >
+      A: {row.statusA}
+    </span>
+
+    <span
+      className={`status status-${row.statusB.toLowerCase()}`}
+    >
+      B: {row.statusB}
+    </span>
+
+    <span
+      className={`status status-${row.statusD.toLowerCase()}`}
+    >
+      D: {row.statusD}
+    </span>
+  </div>
+
+  {(row.reasons.dashboardA.length > 0 ||
+    row.reasons.dashboardB.length > 0 ||
+    row.reasons.dashboardD.length > 0) && (
+    <div className="reconciliation-reasons">
+      {row.reasons.dashboardA.map((reason) => (
+        <small key={`a-${reason}`}>A: {reason}</small>
+      ))}
+
+      {row.reasons.dashboardB.map((reason) => (
+        <small key={`b-${reason}`}>B: {reason}</small>
+      ))}
+
+      {row.reasons.dashboardD.map((reason) => (
+        <small key={`d-${reason}`}>D: {reason}</small>
+      ))}
+    </div>
+  )}
+</td>
+                    
                   </tr>
                 ))}
               </tbody>

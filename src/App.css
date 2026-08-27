@@ -307,3 +307,17 @@ tbody tr:nth-child(3) td:first-child {
   color: #b45309;
   font-weight: 700;
 }
+
+.reconciliation-reasons {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reconciliation-reasons small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
