@@ -8,6 +8,21 @@ import {
   isValidAgent,
 } from "./rules";
 
+export type DisplayBucket =
+  | "counted"
+  | "flagged"
+  | "capped"
+  | "excluded"
+  | "rejected";
+
+export function getDisplayBucket(result: ScoringResult): DisplayBucket {
+  if (result.flagged) {
+    return "flagged";
+  }
+
+  return result.status.toLowerCase() as DisplayBucket;
+}
+
 export function scoreEvents(
   events: readonly Event[],
   roster: readonly Agent[],
@@ -73,7 +88,8 @@ export function scoreEvents(
         status: "CAPPED",
         points: 0,
         reason: "Daily limit already reached for this agent and event type. No additional points awarded today.",
-        flagged: false,
+        flagged: true,
+        flagReason: "Daily cap hit: additional entries for this agent and event type on the same day score zero.",
       });
 
       continue;

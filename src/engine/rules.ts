@@ -1,5 +1,5 @@
 import type { Agent, Event, EventType } from "./types";
-import { pointConfigHistory } from "../data/config";
+import { pointConfigHistory, type PointConfig } from "../data/config";
 
 export const SEASON_START = "2026-08-01T00:00:00";
 export const SEASON_END = "2026-08-31T23:59:59";
@@ -40,6 +40,21 @@ export function isSuspiciousManualEvent(
   event: Event,
   events: readonly Event[],
 ): boolean {
+  // R5: DEAL_CLOSED without a preceding BOOKING_TOKEN
+  if (event.type === "DEAL_CLOSED") {
+    const hasPreviousBookingToken = events.some(
+      (otherEvent) =>
+        otherEvent.eventId !== event.eventId &&
+        otherEvent.agentId === event.agentId &&
+        otherEvent.type === "BOOKING_TOKEN" &&
+        otherEvent.occurredAt < event.occurredAt,
+    );
+
+    if (!hasPreviousBookingToken) {
+      return true;
+    }
+  }
+
   if (event.source !== "manual") {
     return false;
   }
@@ -56,21 +71,6 @@ export function isSuspiciousManualEvent(
 
   if (duplicateManualEvent) {
     return true;
-  }
-
-  // R5: DEAL_CLOSED without a preceding BOOKING_TOKEN
-  if (event.type === "DEAL_CLOSED") {
-    const hasPreviousBookingToken = events.some(
-      (otherEvent) =>
-        otherEvent.eventId !== event.eventId &&
-        otherEvent.agentId === event.agentId &&
-        otherEvent.type === "BOOKING_TOKEN" &&
-        otherEvent.occurredAt < event.occurredAt,
-    );
-
-    if (!hasPreviousBookingToken) {
-      return true;
-    }
   }
 
   return false;
@@ -109,4 +109,12 @@ export function getPoints(
   }
 
   return activeConfig.points[eventType];
+}
+
+// R7 literal reading: use the current configuration, not the event-time configuration.
+export function literalR7Points(
+  eventType: EventType,
+  latestConfig: PointConfig,
+): number {
+  return latestConfig.points[eventType];
 }

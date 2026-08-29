@@ -1,12 +1,12 @@
 import type { Event } from "./types";
-import { isSuspiciousManualEvent } from "./rules";
+import { getPoints, isInSeason, isSuspiciousManualEvent, literalR7Points } from "./rules";
 import { describe, expect, test } from "vitest";
 import { ledger } from "../data/ledger";
 import { roster } from "../data/roster";
-import { scoreEvents } from "./scoring";
+import { getDisplayBucket, scoreEvents, type DisplayBucket } from "./scoring";
 import { calculateAgentTotals } from "./totals";
 import { buildLeaderboard } from "./leaderboard";
-import { getPoints } from "./rules";
+import { pointConfigHistory } from "../data/config";
 
 function calculateLeaderboard() {
   const results = scoreEvents(ledger, roster);
@@ -106,5 +106,45 @@ test("does not flag a manual DEAL_CLOSED when a previous BOOKING_TOKEN exists", 
     expect(
       getPoints("DEAL_CLOSED", "2026-08-20T10:00:00"),
     ).toBe(25);
+  });
+
+  test("R7's literal current-config reading gives Bikash Thapa 75 points, versus 60 under A2 point-in-time scoring", () => {
+    const bikashSeasonEvents = ledger.filter(
+      (event) => event.agentId === "AG-03" && isInSeason(event),
+    );
+    const latestConfig = pointConfigHistory.at(-1);
+
+    expect(latestConfig).toBeDefined();
+
+    const pointInTimeTotal = bikashSeasonEvents.reduce(
+      (total, event) => total + getPoints(event.type, event.occurredAt),
+      0,
+    );
+    const literalR7Total = bikashSeasonEvents.reduce(
+      (total, event) => total + literalR7Points(event.type, latestConfig!),
+      0,
+    );
+
+    expect(pointInTimeTotal).toBe(60);
+    expect(literalR7Total).toBe(75);
+  });
+
+  test("the five display buckets account for every ledger event", () => {
+    const buckets: Record<DisplayBucket, number> = {
+      counted: 0,
+      flagged: 0,
+      capped: 0,
+      excluded: 0,
+      rejected: 0,
+    };
+
+    scoreEvents(ledger, roster).forEach((result) => {
+      buckets[getDisplayBucket(result)] += 1;
+    });
+
+    expect(Object.values(buckets).reduce((total, count) => total + count, 0))
+      .toBe(27);
+    expect(Object.values(buckets).reduce((total, count) => total + count, 0))
+      .toBe(ledger.length);
   });
 });

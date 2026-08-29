@@ -10,6 +10,17 @@ export type EventType =
 
 export type EventSource = "auto" | "manual";
 
+export const eventTypeSources: Record<EventType, EventSource> = {
+  DEAL_CLOSED: "auto",
+  BOOKING_TOKEN: "auto",
+  MEETING_INPERSON: "auto",
+  ONTIME_ENTRY: "auto",
+  GOOGLE_REVIEW: "manual",
+  TEAM_PLANNING: "manual",
+  MEETING_VIDEO: "auto",
+  DATA_UPLOAD: "manual",
+};
+
 export type EventStatus =
   | "COUNTED"
   | "FLAGGED"
